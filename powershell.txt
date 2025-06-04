@@ -1,0 +1,11 @@
+Import-Module WebAdministration
+New-WebAppPool -Name todoapi -ErrorAction Stop
+Set-ItemProperty -Path IIS:\AppPools\todoapi -Name managedRuntimeVersion -Value ""
+New-Website -Name todoapi -PhysicalPath C:\Users\vagrant\publish -ApplicationPool todoapi -Port 8080 -ErrorAction Stop
+Invoke-WebRequest -Uri https://github.com/DataDog/dd-trace-dotnet/releases/download/v3.18.0/datadog-dotnet-apm-3.18.0-x64.msi -OutFile datadog-dotnet-apm.msi
+Start-Process -Wait msiexec -ArgumentList '/qn /i datadog-dotnet-apm.msi'
+$value = Get-ItemProperty -Path Registry::HKLM\System\CurrentControlSet\Services\WAS
+$newValue = $value.Environment += "DD_RUNTIME_METRICS_ENABLED=true"
+Set-ItemProperty -Path Registry::HKLM\System\CurrentControlSet\Services\WAS -Name Environment -Value $newValue
+net stop /y was
+net start w3svc
